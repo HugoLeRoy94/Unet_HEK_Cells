@@ -66,7 +66,7 @@ masks = [np.load('/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy',all
 resolution = 256
 
 # Import and preprocess the SNCA images
-sncaip = [np.load(file) for file in SNCAIPfiles]
+sncaip = [np.load(file,allow_pickle=True) for file in SNCAIPfiles]
 sncaip = [tf.image.resize(stack[:, :, :, np.newaxis], (resolution,resolution)) for stack in sncaip]
 sncaip = np.array([np.log(img) for stack in sncaip for img in stack], dtype=np.float32) # add a logscale
 sncaip /= 255.0  # Normalize pixel values to [0, 1]
