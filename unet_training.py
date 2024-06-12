@@ -61,7 +61,7 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 model.summary()
 
 SNCAIPfiles = ['/home/hcleroy/Unet_HEK_Cells/sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
-masks = [np.load('/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
+masks = ['/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy' for i in range(10)]
 
 resolution = 256
 
