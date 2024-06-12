@@ -60,8 +60,8 @@ model = unet_model()
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-SNCAIPfiles = ['/sncaip/Cell'+str(i)+'_ROI'+str(i)+'_SNCAIP.tif' for i in range(1,11)]
-masks = [np.load('/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
+SNCAIPfiles = ['/home/hcleroy/Unet_HEK_Cells/sncaip/Cell'+str(i)+'_ROI'+str(i)+'_SNCAIP.tif' for i in range(1,11)]
+masks = [np.load('/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
 
 resolution = 256
 
@@ -121,4 +121,4 @@ val_generator = zip(val_image_generator, val_mask_generator)
 # Fit the model
 history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
 
-model.save('/UNET_3Cat.h5')
+model.save('/home/hcleroy/Unet_HEK_Cells/UNET_3Cat.h5')
