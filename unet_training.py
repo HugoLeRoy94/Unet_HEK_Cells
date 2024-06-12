@@ -60,7 +60,7 @@ model = unet_model()
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-SNCAIPfiles = ['/home/hcleroy/Unet_HEK_Cells/sncaip/Cell'+str(i)+'_ROI'+str(i)+'_SNCAIP.tif' for i in range(1,11)]
+SNCAIPfiles = ['/home/hcleroy/Unet_HEK_Cells/sncaip/sncaip_'+str(i)+'npy' for i in range(10)]
 masks = [np.load('/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
 
 resolution = 256
