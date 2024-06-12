@@ -1,0 +1,25 @@
+# Use the base TensorFlow image with Jupyter
+#FROM tensorflow/tensorflow:2.14.0-gpu-jupyter
+FROM tensorflow/tensorflow:2.14.0-jupyter
+
+# Install additional Python packages
+RUN pip install --upgrade pip
+RUN pip install \
+    numpy \
+    pandas \
+    scikit-learn \
+    matplotlib \
+    seaborn \
+    scipy \
+    h5py \
+    tifffile 
+    # Add any other packages you need here
+
+# Set the working directory
+WORKDIR /tf/notebooks
+
+# Expose the Jupyter Notebook port
+EXPOSE 8888
+
+# Command to run Jupyter Notebook
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
