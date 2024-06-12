@@ -4,7 +4,6 @@ from tensorflow.keras.models import Model
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
-import tifffile as tif
 
 def unet_model(input_size=(256, 256, 3)):
     inputs = Input(input_size)
@@ -67,7 +66,7 @@ masks = [np.load('/app/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in
 resolution = 256
 
 # Import and preprocess the SNCA images
-sncaip = [tif.imread(file) for file in SNCAIPfiles]
+sncaip = [np.load(file) for file in SNCAIPfiles]
 sncaip = [tf.image.resize(stack[:, :, :, np.newaxis], (resolution,resolution)) for stack in sncaip]
 sncaip = np.array([np.log(img) for stack in sncaip for img in stack], dtype=np.float32) # add a logscale
 sncaip /= 255.0  # Normalize pixel values to [0, 1]
