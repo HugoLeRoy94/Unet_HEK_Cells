@@ -1,5 +1,6 @@
 # Use the official TensorFlow GPU image from Docker Hub
-FROM tensorflow/tensorflow:2.14.0-gpu
+#FROM tensorflow/tensorflow:2.14.0-gpu
+FROM tensorflow/tensorflow:latest-gpu
 
 # Set the working directory in the container
 WORKDIR /app

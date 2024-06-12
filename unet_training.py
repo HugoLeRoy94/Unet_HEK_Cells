@@ -61,8 +61,8 @@ model = unet_model()
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-SNCAIPfiles = ['sncaip/Cell'+str(i)+'_ROI'+str(i)+'_SNCAIP.tif' for i in range(1,11)]
-masks = [np.load('masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
+SNCAIPfiles = ['/app/sncaip/Cell'+str(i)+'_ROI'+str(i)+'_SNCAIP.tif' for i in range(1,11)]
+masks = [np.load('/app/masks/masks4D_'+str(i)+'.npy',allow_pickle=True) for i in range(10)]
 
 resolution = 256
 
@@ -119,20 +119,7 @@ val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed
 val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
 val_generator = zip(val_image_generator, val_mask_generator)
 
-# Create a summary writer for TensorBoard
-log_dir = 'logs'
-writer = tf.summary.create_file_writer(log_dir)
-
 # Fit the model
 history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
-
-# Log the training process to TensorBoard
-with writer.as_default():
-    for epoch in range(10):
-        tf.summary.scalar('loss', history.history['loss'][epoch], step=epoch)
-        tf.summary.scalar('val_loss', history.history['val_loss'][epoch], step=epoch)
-
-# Close the writer
-writer.close() 
 
 model.save('/app/UNET_3Cat.h5')
