@@ -60,8 +60,8 @@ model = unet_model()
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-SNCAIPfiles = ['/home/hcleroy/Unet_HEK_Cells/sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
-masks = ['/home/hcleroy/Unet_HEK_Cells/masks/masks4D_'+str(i)+'.npy' for i in range(10)]
+SNCAIPfiles = ['sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
+masks = ['masks/masks4D_'+str(i)+'.npy' for i in range(10)]
 
 resolution = 256
 
@@ -83,7 +83,7 @@ print("Shape of cells:", cells.shape)
 # Split data into training and validation sets
 split_idx = int(0.8 * len(sncaip))
 train_images, val_images = sncaip[:split_idx], sncaip[split_idx:]
-train_masks, val_masks = masks[:split_idx], masks[split_idx:]
+train_masks, val_masks = cells[:split_idx], cells[split_idx:]
 
 # Define data augmentation for images and masks
 image_datagen = ImageDataGenerator(rotation_range=90,
@@ -108,17 +108,27 @@ mask_datagen = ImageDataGenerator(rotation_range=90,
 
 seed = 1
 batch_size = 10
+
+# Custom generator to yield (image, mask) pairs
+def custom_generator(image_generator, mask_generator):
+    while True:
+        image_batch = image_generator.next()
+        mask_batch = mask_generator.next()
+        yield (image_batch, mask_batch)
+
 # Create data generators for training
 train_image_generator = image_datagen.flow(train_images, batch_size=batch_size, seed=seed)
 train_mask_generator = mask_datagen.flow(train_masks, batch_size=batch_size, seed=seed)
-train_generator = zip(train_image_generator, train_mask_generator)
+#train_generator = list(zip(train_image_generator, train_mask_generator))
+train_generator = custom_generator(train_image_generator, train_mask_generator)
 
 # Create data generators for validation
 val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed=seed)
 val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
-val_generator = zip(val_image_generator, val_mask_generator)
+#val_generator = list(zip(val_image_generator, val_mask_generator))
+val_generator = custom_generator(val_image_generator, val_mask_generator)
 
 # Fit the model
 history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
 
-model.save('/home/hcleroy/Unet_HEK_Cells/UNET_3Cat.h5')
+model.save('UNET_3Cat.h5')
