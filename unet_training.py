@@ -5,7 +5,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 
-def unet_model(input_size=(256, 256, 3)):
+def unet_model(input_size=(256, 256, 1)):
     inputs = Input(input_size)
     
     # Encoder (Downsampling)
@@ -61,7 +61,7 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 model.summary()
 
 SNCAIPfiles = ['sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
-masks = ['masks/masks4D_'+str(i)+'.npy' for i in range(10)]
+masks = ['masks/masks1D_'+str(i)+'.npy' for i in range(10)]
 
 resolution = 256
 
@@ -112,8 +112,8 @@ batch_size = 10
 # Custom generator to yield (image, mask) pairs
 def custom_generator(image_generator, mask_generator):
     while True:
-        image_batch = image_generator.next()
-        mask_batch = mask_generator.next()
+        image_batch = next(image_generator)
+        mask_batch = next(mask_generator)
         yield (image_batch, mask_batch)
 
 # Create data generators for training
