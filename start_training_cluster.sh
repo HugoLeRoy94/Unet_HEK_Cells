@@ -3,8 +3,8 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --time=00:02:00  # Set a proper time limit
-#SBATCH --output=tensorboard-log-%J.out
+#SBATCH --output=log-%J.out
 
 module load gcc python openmpi py-tensorflow py-keras
 
-python unet_training.py
+python mono_class_training.py
