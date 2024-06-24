@@ -62,7 +62,6 @@ model = unet_model()
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
-import tifffile as tif
 import matplotlib.pyplot as plt
 
 SNCAIPfiles = ['sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
