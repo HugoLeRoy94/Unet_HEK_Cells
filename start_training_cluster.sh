@@ -7,4 +7,4 @@
 
 module load gcc python openmpi py-tensorflow py-keras
 
-python mono_class_training.py
+python multiclass_training_2.py
