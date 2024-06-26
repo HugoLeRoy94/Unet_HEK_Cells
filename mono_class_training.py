@@ -69,11 +69,6 @@ from keras.models import Model
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate, Conv2DTranspose, BatchNormalization, Dropout, Lambda
 from keras import backend as K
 
-def jacard_coef(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + 1.0)
 
 
 
@@ -86,55 +81,56 @@ def multi_unet_model(n_classes=1, IMG_HEIGHT=256, IMG_WIDTH=256, IMG_CHANNELS=1)
 
     #Contraction path
     c1 = Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(s)
-    c1 = Dropout(0.2)(c1)  # Original 0.1
+    c1 = Dropout(0.1)(c1)  # Original 0.1
     c1 = Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c1)
     p1 = MaxPooling2D((2, 2))(c1)
     
     c2 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p1)
-    c2 = Dropout(0.2)(c2)  # Original 0.1
+    c2 = Dropout(0.1)(c2)  # Original 0.1
     c2 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c2)
     p2 = MaxPooling2D((2, 2))(c2)
      
     c3 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p2)
-    c3 = Dropout(0.2)(c3)
+    c3 = Dropout(0.1)(c3)
     c3 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c3)
     p3 = MaxPooling2D((2, 2))(c3)
      
     c4 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p3)
-    c4 = Dropout(0.2)(c4)
+    c4 = Dropout(0.1)(c4)
     c4 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c4)
     p4 = MaxPooling2D(pool_size=(2, 2))(c4)
      
     c5 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p4)
-    c5 = Dropout(0.3)(c5)
+    c5 = Dropout(0.1)(c5)
     c5 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c5)
     
     #Expansive path 
     u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
     u6 = concatenate([u6, c4])
     c6 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u6)
-    c6 = Dropout(0.2)(c6)
+    c6 = Dropout(0.1)(c6)
     c6 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c6)
      
     u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
     u7 = concatenate([u7, c3])
     c7 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u7)
-    c7 = Dropout(0.2)(c7)
+    c7 = Dropout(0.1)(c7)
     c7 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c7)
      
     u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c7)
     u8 = concatenate([u8, c2])
     c8 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u8)
-    c8 = Dropout(0.2)(c8)  # Original 0.1
+    c8 = Dropout(0.1)(c8)  # Original 0.1
     c8 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c8)
      
     u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c8)
     u9 = concatenate([u9, c1], axis=3)
     c9 = Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u9)
-    c9 = Dropout(0.2)(c9)  # Original 0.1
+    c9 = Dropout(0.1)(c9)  # Original 0.1
     c9 = Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c9)
      
-    outputs = Conv2D(n_classes, (1, 1), activation='softmax')(c9)
+    #outputs = Conv2D(n_classes, (1, 1), activation='softmax')(c9)
+    outputs = Conv2D(n_classes, (1, 1), activation='sigmoid')(c9)
      
     model = Model(inputs=[inputs], outputs=[outputs])
     
@@ -179,52 +175,57 @@ print("Shape of snca:", sncaip.shape)
 print("Shape of cells:", masks.shape)
 
 
-# Split data into training and validation sets
-split_idx = int(0.8 * len(sncaip))
-train_images, val_images = sncaip[:split_idx], sncaip[split_idx:]
-train_masks, val_masks = masks[:split_idx], masks[split_idx:]
-
-
-# Define data augmentation for images and masks
-image_datagen = ImageDataGenerator(rotation_range=90,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    vertical_flip=True,
-    fill_mode='nearest'
-)
-mask_datagen = ImageDataGenerator(rotation_range=90,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    vertical_flip=True,
-    fill_mode='constant',
-    cval=0.
-)
-
-seed = 1
-batch_size = 5
-
-# Custom generator to yield (image, mask) pairs
-def custom_generator(image_generator, mask_generator):
-    while True:
-        image_batch = next(image_generator)
-        mask_batch = next(mask_generator)
-        yield (image_batch, mask_batch)
-
-# Create data generators for training
-train_image_generator = image_datagen.flow(train_images, batch_size=batch_size, seed=seed)
-train_mask_generator = mask_datagen.flow(train_masks, batch_size=batch_size, seed=seed)
-train_generator = custom_generator(train_image_generator, train_mask_generator)
-
-# Create data generators for validation
-val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed=seed)
-val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
-val_generator = custom_generator(val_image_generator, val_mask_generator)
+## Split data into training and validation sets
+#split_idx = int(0.8 * len(sncaip))
+#train_images, val_images = sncaip[:split_idx], sncaip[split_idx:]
+#train_masks, val_masks = masks[:split_idx], masks[split_idx:]
+#
+#
+## Define data augmentation for images and masks
+#image_datagen = ImageDataGenerator(rotation_range=90,
+#    width_shift_range=0.1,
+#    height_shift_range=0.1,
+#    shear_range=0.2,
+#    zoom_range=0.2,
+#    horizontal_flip=True,
+#    vertical_flip=True,
+#    fill_mode='nearest'
+#)
+#mask_datagen = ImageDataGenerator(rotation_range=90,
+#    width_shift_range=0.1,
+#    height_shift_range=0.1,
+#    shear_range=0.2,
+#    zoom_range=0.2,
+#    horizontal_flip=True,
+#    vertical_flip=True,
+#    fill_mode='constant',
+#    cval=0.
+#)
+#
+#seed = 1
+#batch_size = 5
+#
+## Custom generator to yield (image, mask) pairs
+#def custom_generator(image_generator, mask_generator):
+#    while True:
+#        image_batch = next(image_generator)
+#        mask_batch = next(mask_generator)
+#        yield (image_batch, mask_batch)
+#
+## Create data generators for training
+#train_image_generator = image_datagen.flow(train_images, batch_size=batch_size, seed=seed)
+#train_mask_generator = mask_datagen.flow(train_masks, batch_size=batch_size, seed=seed)
+#train_generator = custom_generator(train_image_generator, train_mask_generator)
+#
+## Create data generators for validation
+#val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed=seed)
+#val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
+#val_generator = custom_generator(val_image_generator, val_mask_generator)
 # Fit the model
-history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
+callbacks =[
+            tf.keras.callbacks.EarlyStopping(patience=3,monitor='val_loss')
+]
+
+#history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
+history = model.fit(sncaip,masks,validation_split=0.1,batch_size=16,epochs=100,callbacks=callbacks)
 model.save('UNET_mono_b.h5')
