@@ -221,11 +221,14 @@ print("Shape of cells:", masks.shape)
 #val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed=seed)
 #val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
 #val_generator = custom_generator(val_image_generator, val_mask_generator)
+checkpointer = tf.keras.callbacks.ModelCheckpoint('UNET_mono.h5',verbose=1,save_best_only=True)
+
 # Fit the model
 callbacks =[
-            tf.keras.callbacks.EarlyStopping(patience=3,monitor='val_loss')
+            tf.keras.callbacks.EarlyStopping(patience=3,monitor='val_loss'),
+            checkpointer
 ]
 
 #history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
 history = model.fit(sncaip,masks,validation_split=0.1,batch_size=16,epochs=100,callbacks=callbacks)
-model.save('UNET_mono_b.h5')
+#model.save('UNET_mono_b.h5')
