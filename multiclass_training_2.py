@@ -151,23 +151,31 @@ import matplotlib.pyplot as plt
 
 SNCAIPfiles = ['sncaip/sncaip_'+str(i)+'.npy' for i in range(10)]
 masks = ['masks/masks4D_'+str(i)+'.npy' for i in range(10)]
+masks1D = ['masks/masks1D_'+str(i)+'.npy' for i in range(10)]
+
+
 
 
 resolution = 256
-
-
 # Import and preprocess the SNCA images
 sncaip = [np.load(file,allow_pickle=True) for file in SNCAIPfiles]
 sncaip = [tf.image.resize(stack[:, :, :, np.newaxis], (resolution,resolution)) for stack in sncaip] # Normalize pixel values to [0, 1] and adjust resolution
 sncaip = np.array([img for stack in sncaip for img in stack], dtype=np.float32) # add a logscale
 sncaip/=255
 
-# Import and preprocess the cell masks
 masks = [np.load(file, allow_pickle=True) for file in masks]
-masks = [tf.image.resize(tf.convert_to_tensor(stack[:, :, :,:])  , (resolution,resolution)) for stack in masks]
-masks = np.array([img for stack in masks for img in stack], dtype=bool)
+masks = [tf.image.resize(tf.convert_to_tensor(stack[:, :, :,:])  , (resolution,resolution),method=tf.image.ResizeMethod.NEAREST_NEIGHBOR) for stack in masks]
+masks = np.array([img for stack in masks for img in stack], dtype=int)
 
-
+masks1D = [np.load(file, allow_pickle=True) for file in masks1D]
+masks1D = [tf.image.resize(tf.convert_to_tensor(stack[:, :, :,:])  , (resolution,resolution),method=tf.image.ResizeMethod.NEAREST_NEIGHBOR) for stack in masks1D]
+masks1D = np.array([img for stack in masks1D for img in stack], dtype=int)
+from sklearn.utils import class_weight
+class_weights = class_weight.compute_class_weight('balanced',
+                                                 np.unique(masks1D.flatten()),
+                                                 masks1D.flatten())
+print("Class weights are...:", class_weights)
+del masks1D
 
 # Ensure the shapes are correct
 print("Shape of snca:", sncaip.shape)
@@ -175,52 +183,7 @@ print("Shape of snca:", sncaip.shape)
 print("Shape of cells:", masks.shape)
 
 
-## Split data into training and validation sets
-#split_idx = int(0.8 * len(sncaip))
-#train_images, val_images = sncaip[:split_idx], sncaip[split_idx:]
-#train_masks, val_masks = masks[:split_idx], masks[split_idx:]
-#
-#
-## Define data augmentation for images and masks
-#image_datagen = ImageDataGenerator(rotation_range=90,
-#    width_shift_range=0.1,
-#    height_shift_range=0.1,
-#    shear_range=0.2,
-#    zoom_range=0.2,
-#    horizontal_flip=True,
-#    vertical_flip=True,
-#    fill_mode='nearest'
-#)
-#mask_datagen = ImageDataGenerator(rotation_range=90,
-#    width_shift_range=0.1,
-#    height_shift_range=0.1,
-#    shear_range=0.2,
-#    zoom_range=0.2,
-#    horizontal_flip=True,
-#    vertical_flip=True,
-#    fill_mode='constant',
-#    cval=0.
-#)
-#
-#seed = 1
-#batch_size = 5
-#
-## Custom generator to yield (image, mask) pairs
-#def custom_generator(image_generator, mask_generator):
-#    while True:
-#        image_batch = next(image_generator)
-#        mask_batch = next(mask_generator)
-#        yield (image_batch, mask_batch)
-#
-## Create data generators for training
-#train_image_generator = image_datagen.flow(train_images, batch_size=batch_size, seed=seed)
-#train_mask_generator = mask_datagen.flow(train_masks, batch_size=batch_size, seed=seed)
-#train_generator = custom_generator(train_image_generator, train_mask_generator)
-#
-## Create data generators for validation
-#val_image_generator = image_datagen.flow(val_images, batch_size=batch_size, seed=seed)
-#val_mask_generator = mask_datagen.flow(val_masks, batch_size=batch_size, seed=seed)
-#val_generator = custom_generator(val_image_generator, val_mask_generator)
+
 checkpointer = tf.keras.callbacks.ModelCheckpoint('UNET_multi.h5',verbose=1,save_best_only=True)
 
 # Fit the model
@@ -230,5 +193,5 @@ callbacks =[
 ]
 
 #history = model.fit(train_generator, steps_per_epoch=len(train_images) // batch_size, epochs=10, validation_data=val_generator, validation_steps=len(val_images) // batch_size)
-history = model.fit(sncaip,masks,validation_split=0.1,batch_size=16,epochs=100,callbacks=callbacks)
+history = model.fit(sncaip,masks,validation_split=0.1,batch_size=16,epochs=100,callbacks=callbacks,class_weight=class_weights)
 #model.save('UNET_mono_b.h5')
